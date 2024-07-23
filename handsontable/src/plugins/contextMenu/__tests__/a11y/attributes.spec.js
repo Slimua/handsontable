@@ -40,7 +40,7 @@ describe('a11y DOM attributes (ARIA tags)', () => {
     expect(hot.getPlugin('contextMenu').menu.container.getAttribute('role')).toEqual('menu');
   });
 
-  it('should assign the `role=menuitem` attribute to all the options of the context menu', () => {
+  it('should assign the `role=menuitem` attribute to all the options of the context menu except of the `Read only` option', () => {
     const hot = handsontable({
       contextMenu: true
     });
@@ -54,12 +54,31 @@ describe('a11y DOM attributes (ARIA tags)', () => {
       'td',
       'role',
       'menuitem'
-    ).length).toEqual(cMenu.hotMenu.countRows());
-
-    expect(cMenu.hotMenu.getCell(0, 0).getAttribute('role')).toEqual('menuitem');
+    ).length).toEqual(cMenu.hotMenu.countRows() - 1);
   });
 
-  it('should assign the `aria-label` attribute to all the options of the context menu', () => {
+  it('should assign the `role=menucheckboxitem` to the `Read only` option of the context menu', () => {
+    const hot = handsontable({
+      contextMenu: true
+    });
+
+    contextMenu();
+
+    const cMenu = hot.getPlugin('contextMenu').menu;
+
+    const menuItemCheckboxes = filterElementsByAttribute(
+      cMenu.container,
+      'td',
+      'role',
+      'menuitemcheckbox'
+    );
+
+    expect(menuItemCheckboxes.length).toEqual(1);
+    expect(menuItemCheckboxes[0].ariaLabel).toBe('Read only unchecked');
+  });
+
+  it('should assign the `aria-label` attribute to all the options of the context menu', async() => {
+
     handsontable({
       contextMenu: true
     });
@@ -68,12 +87,13 @@ describe('a11y DOM attributes (ARIA tags)', () => {
 
     const cMenu = getPlugin('contextMenu').menu;
 
-    expect(filterElementsByAttribute(
-      cMenu.container,
-      'td',
-      'aria-label',
-      el => (el.innerText === '' ? '---------' : el.innerText)
-    ).length).toBe(cMenu.hotMenu.countRows());
+    await sleep(300);
+
+    const ariaLabelledCells = [...cMenu.container.querySelectorAll('td')]
+      .filter(el => el.ariaLabel !== undefined);
+
+    expect(ariaLabelledCells.length).toBe(cMenu.hotMenu.countRows());
+
     expect(cMenu.hotMenu.getCell(0, 0).getAttribute('aria-label')).toBe('Insert row above');
   });
 
